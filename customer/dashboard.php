@@ -1,3 +1,29 @@
+<?php
+session_start();
+require_once __DIR__.'/../vendor/autoload.php';
+use App\classes\Dashboard;
+use App\classes\Transaction;
+use App\classes\User;
+use App\classes\File;
+use App\classes\Database;
+use App\classes\Helpers;
+use App\classes\TransactionType;
+$helpers          = new Helpers();
+$configArray      = require __DIR__.'/../src/config/storage.php';
+$dsn              = $helpers->config('dsn',$configArray);
+$username         = $helpers->config('username',$configArray);
+$password         = $helpers->config('password',$configArray);
+$newPDO           = new PDO($dsn,$username,$password);
+$newDB            = new Database($newPDO,$dsn,$username,$password);
+$newUserFile      = new File(dirname(__DIR__).'/src/files/users.txt');
+$newTransFile     = new File(dirname(__DIR__).'/src/files/transactions.txt');
+$dashboard        = new Dashboard(new User($newDB), new Transaction($newDB, new User($newDB), [], $helpers));
+$userTransactions = $dashboard->getAllUserSpecificTransactions();
+$authUser         = $dashboard->getAuthenticatedUserBySession();  
+// $dashboard        = new Dashboard(new User($newUserFile), new Transaction($newTransFile, new User($newUserFile), [], $helpers));
+// $userTransactions = $dashboard->getAllUserSpecificTransactions();
+// $authUser         = $dashboard->getAuthenticatedUserBySession();  
+?>
 <!DOCTYPE html>
 <html
   class="h-full bg-gray-100"
@@ -35,7 +61,7 @@
       }
     </style>
 
-    <title>Transfer Balance</title>
+    <title>Dashboard</title>
   </head>
   <body class="h-full">
     <div class="min-h-full">
@@ -51,24 +77,24 @@
                   <div class="flex space-x-4">
                     <!-- Current: "bg-emerald-700 text-white", Default: "text-white hover:bg-emerald-500 hover:bg-opacity-75" -->
                     <a
-                      href="./dashboard.html"
-                      class="text-white hover:bg-emerald-500 hover:bg-opacity-75 rounded-md py-2 px-3 text-sm font-medium"
+                      href="./dashboard.php"
+                      class="bg-emerald-700 text-white rounded-md py-2 px-3 text-sm font-medium"
                       aria-current="page"
                       >Dashboard</a
                     >
                     <a
-                      href="./deposit.html"
+                      href="./deposit.php"
                       class="text-white hover:bg-emerald-500 hover:bg-opacity-75 rounded-md py-2 px-3 text-sm font-medium"
                       >Deposit</a
                     >
                     <a
-                      href="./withdraw.html"
+                      href="./withdraw.php"
                       class="text-white hover:bg-emerald-500 hover:bg-opacity-75 rounded-md py-2 px-3 text-sm font-medium"
                       >Withdraw</a
                     >
                     <a
-                      href="./transfer.html"
-                      class="bg-emerald-700 text-white rounded-md py-2 px-3 text-sm font-medium"
+                      href="./transfer.php"
+                      class="text-white hover:bg-emerald-500 hover:bg-opacity-75 rounded-md py-2 px-3 text-sm font-medium"
                       >Transfer</a
                     >
                   </div>
@@ -111,7 +137,7 @@
                     aria-labelledby="user-menu-button"
                     tabindex="-1">
                     <a
-                      href="#"
+                      href="../logout.php"
                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       role="menuitem"
                       tabindex="-1"
@@ -172,27 +198,27 @@
             id="mobile-menu">
             <div class="space-y-1 pt-2 pb-3">
               <a
-                href="./dashboard.html"
-                class="text-white hover:bg-emerald-500 hover:bg-opacity-75 block rounded-md py-2 px-3 text-base font-medium"
+                href="./dashboard.php"
+                class="bg-emerald-700 text-white block rounded-md py-2 px-3 text-base font-medium"
                 aria-current="page"
                 >Dashboard</a
               >
 
               <a
-                href="./deposit.html"
+                href="./deposit.php"
                 class="text-white hover:bg-emerald-500 hover:bg-opacity-75 block rounded-md py-2 px-3 text-base font-medium"
                 >Deposit</a
               >
 
               <a
-                href="./withdraw.html"
+                href="./withdraw.php"
                 class="text-white hover:bg-emerald-500 hover:bg-opacity-75 block rounded-md py-2 px-3 text-base font-medium"
                 >Withdraw</a
               >
 
               <a
-                href="./transfer.html"
-                class="bg-emerald-700 text-white block rounded-md py-2 px-3 text-base font-medium"
+                href="./transfer.php"
+                class="text-white hover:bg-emerald-500 hover:bg-opacity-75 block rounded-md py-2 px-3 text-base font-medium"
                 >Transfer</a
               >
             </div>
@@ -249,7 +275,7 @@
         <header class="py-10">
           <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <h1 class="text-3xl font-bold tracking-tight text-white">
-              Transfer Balance
+              Howdy, <?php echo $authUser['name'] ?> 👋
             </h1>
           </div>
         </header>
@@ -268,52 +294,126 @@
                 </dt>
                 <dd
                   class="w-full flex-none text-3xl font-medium leading-10 tracking-tight text-gray-900">
-                  $10,115,091.00
+                  <?php echo $dashboard->calculateCurrentUserBalance() . '$' ?>
                 </dd>
               </div>
             </dl>
 
-            <hr />
-            <!-- Transfer Form -->
-            <div class="sm:rounded-lg">
-              <div class="px-4 py-5 sm:p-6">
-                <div class="mt-4 text-sm text-gray-500">
-                  <form
-                    action="#"
-                    method="POST">
-                    <!-- Recipient's Email Input -->
-                    <input
-                      type="email"
-                      name="email"
-                      id="email"
-                      class="block w-full ring-0 outline-none py-2 text-gray-800 border-b placeholder:text-gray-400 md:text-4xl"
-                      placeholder="Recipient's Email Address"
-                      required />
-
-                    <!-- Amount -->
-                    <div class="relative mt-4 md:mt-8">
-                      <div
-                        class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-0">
-                        <span class="text-gray-400 md:text-4xl">$</span>
-                      </div>
-                      <input
-                        type="number"
-                        name="amount"
-                        id="amount"
-                        class="block w-full ring-0 outline-none pl-4 py-2 md:pl-8 text-gray-800 border-b border-b-emerald-500 placeholder:text-gray-400 md:text-4xl"
-                        placeholder="0.00"
-                        required />
-                    </div>
-
-                    <!-- Submit Button -->
-                    <div class="mt-5">
-                      <button
-                        type="submit"
-                        class="w-full px-6 py-3.5 text-base font-medium text-white bg-emerald-600 hover:bg-emerald-800 focus:ring-4 focus:outline-none focus:ring-emerald-300 rounded-lg md:text-xl text-center">
-                        Proceed
-                      </button>
-                    </div>
-                  </form>
+            <!-- List of All The Transactions -->
+            <div class="px-4 sm:px-6 lg:px-8">
+              <div class="sm:flex sm:items-center">
+                <div class="sm:flex-auto">
+                  <p class="mt-2 text-sm text-gray-700">
+                    Here's a list of all your transactions which inlcuded
+                    receiver's name, email, amount and date.
+                  </p>
+                </div>
+              </div>
+              <div class="mt-8 flow-root">
+                <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                  <div
+                    class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+                    <table class="min-w-full divide-y divide-gray-300">
+                      <thead>
+                        <tr>
+                          <th
+                            scope="col"
+                            class="whitespace-nowrap py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">
+                            Sender Name
+                          </th>
+                          <th
+                            scope="col"
+                            class="whitespace-nowrap py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">
+                            Receiver Name
+                          </th>
+                          <th
+                            scope="col"
+                            class="whitespace-nowrap py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">
+                            Email
+                          </th>
+                          <th
+                            scope="col"
+                            class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">
+                            Amount
+                          </th>
+                          <th
+                            scope="col"
+                            class="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-gray-900">
+                            Date
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-gray-200 bg-white">
+                        <?php 
+                          foreach ($userTransactions as $transaction) {
+                            ?>
+                              <tr>
+                                <td
+                                  class="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-800 sm:pl-0">
+                                  <?php echo $transaction['sender_name'] ?>
+                                </td>
+                                <td
+                                  class="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-800 sm:pl-0">
+                                  <?php echo $transaction['receiver_name'] . ($transaction['type'] == TransactionType::DEPOSIT->value ? '(Deposited)' : ($transaction['type'] == TransactionType::WITHDRAW->value ? '(Withdrawn)' : '(Transferred)')) ?>
+                                </td>
+                                <td
+                                  class="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-500 sm:pl-0">
+                                  <?php echo $transaction['receiver_email'] ?>
+                                </td>
+                                <?php 
+                                  if ($transaction['amount'] < 0) {
+                                    ?>
+                                      <?php 
+                                        if ($transaction['receiver_email'] == $authUser['email'] && $transaction['type'] == TransactionType::TRANSFER->value) {
+                                          ?>
+                                            <td
+                                              class="whitespace-nowrap px-2 py-4 text-sm font-medium text-emerald-600">
+                                              <?php echo $transaction['amount'] * -1 . '$'; ?>
+                                            </td>
+                                          <?php
+                                        }else{
+                                          ?>
+                                            <td
+                                              class="whitespace-nowrap px-2 py-4 text-sm font-medium text-red-600">
+                                              <?php echo $transaction['amount'] . '$'; ?>
+                                            </td>
+                                          <?php
+                                        }
+                                      ?>
+                                    <?php
+                                  }else{
+                                    ?>
+                                      <?php 
+                                        if ($transaction['receiver_email'] == $authUser['email'] && $transaction['type'] == TransactionType::TRANSFER->value) {
+                                          ?>
+                                            <td
+                                              class="whitespace-nowrap px-2 py-4 text-sm font-medium text-red-600">
+                                              <?php echo $transaction['amount'] * -1 . '$' ?>
+                                            </td>
+                                          <?php
+                                        }else{
+                                          ?>
+                                            <td
+                                              class="whitespace-nowrap px-2 py-4 text-sm font-medium text-emerald-600">
+                                              <?php echo $transaction['amount'] . '$' ?>
+                                            </td>
+                                          <?php
+                                        }
+                                      ?>
+                                    <?php
+                                  }
+                                ?>
+                                <td
+                                  class="whitespace-nowrap px-2 py-4 text-sm text-gray-500">
+                                  <?php echo $transaction['date'] ?>
+                                </td>
+                              </tr>
+                            <?php
+                          }
+                        ?>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>

@@ -1,3 +1,28 @@
+<?php
+session_start();
+require_once __DIR__.'/../vendor/autoload.php';
+use App\classes\Transaction;
+use App\classes\User;
+use App\classes\File;
+use App\classes\Database;
+use App\classes\Helpers;
+$helpers              = new Helpers();
+$configArray          = require __DIR__.'/../src/config/storage.php';
+$dsn                  = $helpers->config('dsn',$configArray);
+$username             = $helpers->config('username',$configArray);
+$password             = $helpers->config('password',$configArray);
+$newPDO               = new PDO($dsn,$username,$password);
+$newDB                = new Database($newPDO,$dsn,$username,$password);
+$userFilename         = dirname(__DIR__,1).'/src/files/users.txt';
+$userFile             = new File($userFilename);
+$transactionFilename  = dirname(__DIR__,1).'/src/files/transactions.txt';
+$transactionFile      = new File($transactionFilename);
+$deposit              = new Transaction($newDB,new User($newDB),[],$helpers);
+$deposit->storeTransaction();
+// $deposit              = new Transaction($transactionFile,new User($userFile),[],$helpers);
+// $deposit->storeTransaction();
+?>
+
 <!DOCTYPE html>
 <html
   class="h-full bg-gray-100"
@@ -35,7 +60,7 @@
       }
     </style>
 
-    <title>Withdraw Balance</title>
+    <title>Deposit Balance</title>
   </head>
   <body class="h-full">
     <div class="min-h-full">
@@ -51,23 +76,23 @@
                   <div class="flex space-x-4">
                     <!-- Current: "bg-emerald-700 text-white", Default: "text-white hover:bg-emerald-500 hover:bg-opacity-75" -->
                     <a
-                      href="./dashboard.html"
+                      href="./dashboard.php"
                       class="text-white hover:bg-emerald-500 hover:bg-opacity-75 rounded-md py-2 px-3 text-sm font-medium"
                       aria-current="page"
                       >Dashboard</a
                     >
                     <a
-                      href="./deposit.html"
-                      class="text-white hover:bg-emerald-500 hover:bg-opacity-75 rounded-md py-2 px-3 text-sm font-medium"
+                      href="./deposit.php"
+                      class="bg-emerald-700 text-white rounded-md py-2 px-3 text-sm font-medium"
                       >Deposit</a
                     >
                     <a
-                      href="./withdraw.html"
-                      class="bg-emerald-700 text-white rounded-md py-2 px-3 text-sm font-medium"
+                      href="./withdraw.php"
+                      class="text-white hover:bg-emerald-500 hover:bg-opacity-75 rounded-md py-2 px-3 text-sm font-medium"
                       >Withdraw</a
                     >
                     <a
-                      href="./transfer.html"
+                      href="./transfer.php"
                       class="text-white hover:bg-emerald-500 hover:bg-opacity-75 rounded-md py-2 px-3 text-sm font-medium"
                       >Transfer</a
                     >
@@ -111,7 +136,7 @@
                     aria-labelledby="user-menu-button"
                     tabindex="-1">
                     <a
-                      href="#"
+                      href="../logout.php"
                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       role="menuitem"
                       tabindex="-1"
@@ -172,26 +197,26 @@
             id="mobile-menu">
             <div class="space-y-1 pt-2 pb-3">
               <a
-                href="./dashboard.html"
+                href="./dashboard.php"
                 class="text-white hover:bg-emerald-500 hover:bg-opacity-75 block rounded-md py-2 px-3 text-base font-medium"
                 aria-current="page"
                 >Dashboard</a
               >
 
               <a
-                href="./deposit.html"
-                class="text-white hover:bg-emerald-500 hover:bg-opacity-75 block rounded-md py-2 px-3 text-base font-medium"
+                href="./deposit.php"
+                class="bg-emerald-700 text-white block rounded-md py-2 px-3 text-base font-medium"
                 >Deposit</a
               >
 
               <a
-                href="./withdraw.html"
-                class="bg-emerald-700 text-white block rounded-md py-2 px-3 text-base font-medium"
+                href="./withdraw.php"
+                class="text-white hover:bg-emerald-500 hover:bg-opacity-75 block rounded-md py-2 px-3 text-base font-medium"
                 >Withdraw</a
               >
 
               <a
-                href="./transfer.html"
+                href="./transfer.php"
                 class="text-white hover:bg-emerald-500 hover:bg-opacity-75 block rounded-md py-2 px-3 text-base font-medium"
                 >Transfer</a
               >
@@ -249,7 +274,7 @@
         <header class="py-10">
           <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <h1 class="text-3xl font-bold tracking-tight text-white">
-              Withdaw Balance
+              Deposit Balance
             </h1>
           </div>
         </header>
@@ -268,22 +293,24 @@
                 </dt>
                 <dd
                   class="w-full flex-none text-3xl font-medium leading-10 tracking-tight text-gray-900">
-                  $10,115,091.00
+                  <?php echo $deposit->calculateCurrentUserBalance() . '$' ?>
                 </dd>
               </div>
             </dl>
 
             <hr />
-            <!-- Withdaw Form -->
+            <!-- Deposit Form -->
             <div class="sm:rounded-lg">
               <div class="px-4 py-5 sm:p-6">
                 <h3 class="text-lg font-semibold leading-6 text-gray-800">
-                  Withdaw Money From Your Account
+                  Deposit Money To Your Account
                 </h3>
                 <div class="mt-4 text-sm text-gray-500">
                   <form
-                    action="#"
+                    action="deposit.php"
                     method="POST">
+                    <!-- Hidden Input For Deposit -->
+                     <input type="hidden" name="type" value="deposit">
                     <!-- Input Field -->
                     <div class="relative mt-2 rounded-md">
                       <div
@@ -296,7 +323,7 @@
                         id="amount"
                         class="block w-full ring-0 outline-none text-xl pl-4 py-2 sm:pl-8 text-gray-800 border-b border-b-emerald-500 placeholder:text-gray-400 sm:text-4xl"
                         placeholder="0.00"
-                        required />
+                        novalidate />
                     </div>
 
                     <!-- Submit Button -->

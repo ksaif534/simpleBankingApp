@@ -1,0 +1,1 @@
+a:4:{s:4:"name";s:8:"John Doe";s:5:"email";s:18:"john.doe@gmail.com";s:8:"password";s:60:"$2y$10$YsInFx1zqw9VGieP93oR0.ELQDBv.gPTC.4oCA2cNcCEkM5zfeGNW";s:4:"role";s:5:"admin";}

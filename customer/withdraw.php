@@ -1,3 +1,29 @@
+<?php
+session_start();
+require_once __DIR__.'/../vendor/autoload.php';
+use App\classes\Transaction;
+use App\classes\File;
+use App\classes\Database;
+use App\classes\User;
+use App\classes\Helpers;
+use App\classes\Dashboard;
+$helpers              = new Helpers();
+$configArray          = require dirname(__DIR__,1).'/src/config/storage.php';
+$transactionFilename  = dirname(__DIR__,1).'/src/files/transactions.txt';
+$userFilename         = dirname(__DIR__,1).'/src/files/users.txt';
+$newUserFile          = new User(new File($userFilename));
+$dsn                  = $helpers->config('dsn',$configArray);
+$username             = $helpers->config('username',$configArray);
+$password             = $helpers->config('password',$configArray);
+$newPDO               = new PDO($dsn,$username,$password);
+$newDB                = new Database($newPDO,$dsn,$username,$password);
+$newUserDB            = new User($newDB);
+// $withdraw             = new Transaction(new File($transactionFilename),$newUserFile,[],$helpers);
+// $dashboard            = new Dashboard($newUserFile, new Transaction(new File($transactionFilename), $newUserFile, [], $helpers));
+$withdraw             = new Transaction($newDB,$newUserDB,[],$helpers);
+$dashboard            = new Dashboard($newUserDB, new Transaction($newDB, $newUserDB, [], $helpers));
+$withdraw->storeTransaction();
+?>
 <!DOCTYPE html>
 <html
   class="h-full bg-gray-100"
@@ -35,7 +61,7 @@
       }
     </style>
 
-    <title>Deposit Balance</title>
+    <title>Withdraw Balance</title>
   </head>
   <body class="h-full">
     <div class="min-h-full">
@@ -51,23 +77,23 @@
                   <div class="flex space-x-4">
                     <!-- Current: "bg-emerald-700 text-white", Default: "text-white hover:bg-emerald-500 hover:bg-opacity-75" -->
                     <a
-                      href="./dashboard.html"
+                      href="./dashboard.php"
                       class="text-white hover:bg-emerald-500 hover:bg-opacity-75 rounded-md py-2 px-3 text-sm font-medium"
                       aria-current="page"
                       >Dashboard</a
                     >
                     <a
-                      href="./deposit.html"
-                      class="bg-emerald-700 text-white rounded-md py-2 px-3 text-sm font-medium"
+                      href="./deposit.php"
+                      class="text-white hover:bg-emerald-500 hover:bg-opacity-75 rounded-md py-2 px-3 text-sm font-medium"
                       >Deposit</a
                     >
                     <a
-                      href="./withdraw.html"
-                      class="text-white hover:bg-emerald-500 hover:bg-opacity-75 rounded-md py-2 px-3 text-sm font-medium"
+                      href="./withdraw.php"
+                      class="bg-emerald-700 text-white rounded-md py-2 px-3 text-sm font-medium"
                       >Withdraw</a
                     >
                     <a
-                      href="./transfer.html"
+                      href="./transfer.php"
                       class="text-white hover:bg-emerald-500 hover:bg-opacity-75 rounded-md py-2 px-3 text-sm font-medium"
                       >Transfer</a
                     >
@@ -172,26 +198,26 @@
             id="mobile-menu">
             <div class="space-y-1 pt-2 pb-3">
               <a
-                href="./dashboard.html"
+                href="./dashboard.php"
                 class="text-white hover:bg-emerald-500 hover:bg-opacity-75 block rounded-md py-2 px-3 text-base font-medium"
                 aria-current="page"
                 >Dashboard</a
               >
 
               <a
-                href="./deposit.html"
-                class="bg-emerald-700 text-white block rounded-md py-2 px-3 text-base font-medium"
+                href="./deposit.php"
+                class="text-white hover:bg-emerald-500 hover:bg-opacity-75 block rounded-md py-2 px-3 text-base font-medium"
                 >Deposit</a
               >
 
               <a
-                href="./withdraw.html"
-                class="text-white hover:bg-emerald-500 hover:bg-opacity-75 block rounded-md py-2 px-3 text-base font-medium"
+                href="./withdraw.php"
+                class="bg-emerald-700 text-white block rounded-md py-2 px-3 text-base font-medium"
                 >Withdraw</a
               >
 
               <a
-                href="./transfer.html"
+                href="./transfer.php"
                 class="text-white hover:bg-emerald-500 hover:bg-opacity-75 block rounded-md py-2 px-3 text-base font-medium"
                 >Transfer</a
               >
@@ -249,7 +275,7 @@
         <header class="py-10">
           <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <h1 class="text-3xl font-bold tracking-tight text-white">
-              Deposit Balance
+              Withdaw Balance
             </h1>
           </div>
         </header>
@@ -268,22 +294,34 @@
                 </dt>
                 <dd
                   class="w-full flex-none text-3xl font-medium leading-10 tracking-tight text-gray-900">
-                  $10,115,091.00
+                  <?php echo $dashboard->calculateCurrentUserBalance() . '$' ?>
                 </dd>
+                <?php 
+                  $withdrawMsg = $withdraw->getHelpers()->flash('withdraw_error');
+                  if ($withdrawMsg) {
+                    ?>
+                      <div class="mt-2 bg-red-100 border border-red-200 text-sm text-red-800 rounded-lg p-4" role="alert">
+                            <span class="font-bold"><?= $withdrawMsg; ?></span>
+                        </div>
+                    <?php
+                  }
+                ?>
               </div>
             </dl>
 
             <hr />
-            <!-- Deposit Form -->
+            <!-- Withdaw Form -->
             <div class="sm:rounded-lg">
               <div class="px-4 py-5 sm:p-6">
                 <h3 class="text-lg font-semibold leading-6 text-gray-800">
-                  Deposit Money To Your Account
+                  Withdaw Money From Your Account
                 </h3>
                 <div class="mt-4 text-sm text-gray-500">
                   <form
-                    action="#"
+                    action="withdraw.php"
                     method="POST">
+                    <!-- Hidden Input -->
+                    <input type="hidden" name="type" value="withdraw">
                     <!-- Input Field -->
                     <div class="relative mt-2 rounded-md">
                       <div
@@ -296,7 +334,8 @@
                         id="amount"
                         class="block w-full ring-0 outline-none text-xl pl-4 py-2 sm:pl-8 text-gray-800 border-b border-b-emerald-500 placeholder:text-gray-400 sm:text-4xl"
                         placeholder="0.00"
-                        required />
+                        novalidate
+                        />
                     </div>
 
                     <!-- Submit Button -->

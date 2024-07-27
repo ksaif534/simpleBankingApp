@@ -1,0 +1,16 @@
+{
+    "name": "saifkamal/bangubank",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Saif Kamal",
+            "email": "kamal.saifkamal534@gmail.com"
+        }
+    ],
+    "require": {}
+}

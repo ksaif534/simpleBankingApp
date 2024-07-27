@@ -1,3 +1,26 @@
+<?php
+ob_start();
+session_start();
+require_once __DIR__.'/vendor/autoload.php';
+use App\classes\Auth;
+use App\classes\Helpers;
+use App\classes\User;
+use App\classes\File;
+use App\classes\Database;
+$helpers      = new Helpers();
+$configArray  = require_once __DIR__.'/src/config/storage.php';
+$dsn          = $helpers->config('dsn',$configArray);
+$username     = $helpers->config('username',$configArray);
+$password     = $helpers->config('password',$configArray);
+$filename     = __DIR__.'/src/files/users.txt';
+$newPDO       = new PDO($dsn,$username,$password);
+$newDB        = new Database($newPDO,$dsn,$username,$password);
+$auth         = new Auth(new Helpers(),[],new User($newDB));
+$auth->login();
+// $auth         = new Auth(new Helpers(),[],new User(new File($filename)));
+// $auth->login();
+?>
+
 <!DOCTYPE html>
 <html
   class="h-full bg-white"
@@ -41,9 +64,23 @@
 
       <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-[480px]">
         <div class="px-6 py-12 bg-white shadow sm:rounded-lg sm:px-12">
+          <?php
+            $message = $auth->getHelpers()->flash('success');
+            if ($message) : ?>
+              <div class="mt-2 bg-teal-100 border border-teal-200 text-sm text-teal-800 rounded-lg p-4" role="alert">
+                  <span class="font-bold"><?= $message; ?></span>
+              </div>
+          <?php endif; ?>
+          <?php 
+            $msg = $auth->getHelpers()->flash('error');
+            if ($msg) : ?>
+              <div class="mt-2 bg-red-100 border border-red-200 text-sm text-red-800 rounded-lg p-4" role="alert">
+                  <span class="font-bold"><?= $msg; ?></span>
+              </div>
+          <?php endif; ?>
           <form
             class="space-y-6"
-            action="#"
+            action="login.php"
             method="POST">
             <div>
               <label
@@ -57,11 +94,17 @@
                   name="email"
                   type="email"
                   autocomplete="email"
-                  required
+                  novalidate
                   class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald-600 p-2 sm:text-sm sm:leading-6" />
               </div>
             </div>
-
+            <?php 
+              $emailErr = $auth->getHelpers()->flash('email');
+              if ($emailErr) : ?>
+                <div class="mt-2 bg-red-100 border border-red-200 text-sm text-red-800 rounded-lg p-4" role="alert">
+                    <span class="font-bold"><?= $emailErr; ?></span>
+                </div>
+            <?php endif; ?>
             <div>
               <label
                 for="password"
@@ -74,11 +117,17 @@
                   name="password"
                   type="password"
                   autocomplete="current-password"
-                  required
+                  novalidate
                   class="block w-full p-2 text-gray-900 border-0 rounded-md shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald-600 sm:text-sm sm:leading-6" />
               </div>
             </div>
-
+            <?php 
+              $passwordErr = $auth->getHelpers()->flash('password');
+              if ($passwordErr) : ?>
+                <div class="mt-2 bg-red-100 border border-red-200 text-sm text-red-800 rounded-lg p-4" role="alert">
+                    <span class="font-bold"><?= $passwordErr; ?></span>
+                </div>
+            <?php endif; ?>
             <div>
               <button
                 type="submit"
