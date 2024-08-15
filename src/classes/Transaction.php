@@ -105,7 +105,7 @@ class Transaction{
                 $sum += $transaction['amount'];
             }
         }
-        return $sum;
+        return round($sum);
     }
 
     public function getFileName() : string
@@ -145,7 +145,8 @@ class Transaction{
         $sender         = $this->authUser['name'];
         $amountSignature= isset($_POST['type']) ? ($_POST['type'] == TransactionType::DEPOSIT->value ? 1 : -1) : 0; 
         $userByEmail    = ($this->helpers->config('users',$this->configArray) == $this->user->getFileName()) ? $this->user->getUserByEmail($this->user->getFileName(),$email) : $this->user->getUserByEmailDB($email);
-        $receiver       = isset($_POST['type']) ? ($_POST['type'] != TransactionType::TRANSFER->value ? $authUser['name'] : $userByEmail['name']) : '';
+        $receiver       = isset($_POST['type']) ? ($_POST['type'] != TransactionType::TRANSFER->value ? $authUser['name'] : (isset($userByEmail['name']) ?? null)) : '';
+        $emailValidOrNot= false;
         if ($this->helpers->config('transactions',$this->configArray) == $this->getFileName()) {
             //File
             $transaction    = [
@@ -158,7 +159,10 @@ class Transaction{
                 'date'              => date('Y-m-d H:i:s')
             ];
             $transactions   = $this->getAllTransactions();
-            array_push($transactions,$transaction);
+            if ($this->isValidEmail($email)) {
+                array_push($transactions,$transaction);
+                $emailValidOrNot = true;
+            }
         }else{
             //DB
             $query          = 'INSERT INTO transactions (user_id, sender_name, receiver_email, receiver_name, type, amount, date) VALUES(:user_id, :sender_name, :receiver_email, :receiver_name, :type, :amount, :date)';
@@ -172,8 +176,15 @@ class Transaction{
                 ':amount'           => $this->amount * $amountSignature,
                 ':date'             => date('Y-m-d H:i:s')
             ];
+            if ($this->isValidEmail($email)) {
+                $emailValidOrNot = true;
+            }
         }
-        $hasProcessedFileOrDB = ($this->helpers->config('transactions',$this->configArray) == $this->getFileName()) ? $this->putProcessedFileContent($this->getFileName(),$transactions) : $stmt->execute($params);
+        if ($emailValidOrNot) {
+            $hasProcessedFileOrDB = ($this->helpers->config('transactions',$this->configArray) == $this->getFileName()) ? $this->putProcessedFileContent($this->getFileName(),$transactions) : $stmt->execute($params);
+        }else{
+            $hasProcessedFileOrDB = false;
+        }
         if ($hasProcessedFileOrDB) {
             switch ($_POST['type']) {
                 case 'deposit':
@@ -231,6 +242,13 @@ class Transaction{
             return false;
         }
         return true;
+    }
+
+    public function isValidEmail($email){
+        if (file_exists($this->storage->getFileName())) {
+            return $this->user->isValidEmailFile(dirname(__DIR__,1).'/files/users.txt',$email);
+        }
+        return $this->user->isValidEmailDB($email);
     }
 }
 

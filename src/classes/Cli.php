@@ -26,30 +26,15 @@ class Cli{
         $commandName = $argv[1] ?? null;
         if ($commandName == 'create-admin') {
             while(true){
-                $this->showOptions();
-                $choice = $this->readChoice();
-                switch ($choice) {
-                    case 1:
-                        $this->addName();
-                        break;
-                    case 2:
-                        $this->addEmail();
-                        break;
-                    case 3:
-                        $this->addPassword();
-                        break;
-                    case 4:
-                        $this->submitForm();
-                        break;
-                    case 5:
-                        $this->exitApp();
-                        return 0;
-                        break;
-                    
-                    default:
-                        # code...
-                        break;
-                }
+                echo "Enter Admin Name:\n";
+                $this->addName();
+                echo "Enter Admin Email:\n";
+                $this->addEmail();
+                echo "Enter Admin Password:\n";
+                $this->addPassword();
+                $this->submitForm();
+                $this->exitApp();
+                return 0;
             }
         }else{
             $this->showHelp();
@@ -60,23 +45,6 @@ class Cli{
         echo "Usage: cli.php <command>\n";
         echo "Avaialble Commands: \n";
         echo " create-admin\n";
-    }
-
-    private function showOptions() : void {
-        echo "Choose an Option: (Enter only the number of the option)\n";
-        echo " 1. Enter Admin Name:\n";
-        echo " 2. Enter Admin Email:\n";
-        echo " 3. Enter Admin Password:\n";
-        echo " 4. Submit Form\n";
-        echo " 5. Exit\n";
-        echo " Enter Your Choice:\n";
-    }
-
-    private function readChoice() : int {
-        $handle = fopen("php://stdin","r");
-        $line = fgets($handle);
-        fclose($handle);
-        return (int) trim($line);
     }
 
     private function readAdditionalInfo() : string {
@@ -218,6 +186,7 @@ class Cli{
             array_push($users,$this->adminArr);
             $this->storage->putProcessedFileContent('../src/files/users.txt',$users);
         }
+        echo "Form is Submitted\n";
     }
 }
 

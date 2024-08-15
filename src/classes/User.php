@@ -80,6 +80,14 @@ class User{
         return $query;
     }
 
+    public function isValidEmailFile($filename,$email) : bool{
+        $fileData = $this->getUserByEmail($filename,$email);
+        if(empty($fileData)){
+            return false;
+        }
+        return true;
+    }
+
     public function getUserByEmailDB($email){
         $query  = 'SELECT * FROM users WHERE email = :email';
         $stmt   = $this->storage->getPDO()->prepare($query);
@@ -88,6 +96,14 @@ class User{
         ];
         $stmt->execute($params); 
         return $stmt->fetch();
+    }
+
+    public function isValidEmailDB($email) : bool{
+        $emailData = $this->getUserByEmailDB($email);
+        if(empty($emailData)){
+            return false;
+        }
+        return true;
     }
 
     public function updatedFileInputWithAutoIncrement($users,$user){
